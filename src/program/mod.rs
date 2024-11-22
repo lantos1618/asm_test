@@ -2,7 +2,8 @@ use crate::{builder::InstructionBuilder, instruction::Register};
 use crate::context::Context;
 use std::fmt;
 use std::path::Path;
-use crate::compiler::{Compiler, CompilerOptions, CompileError};
+// use crate::compiler::{Compiler, CompilerOptions, CompileError};
+use crate::compiler::{CompilerOptions, CompileError};
 use crate::instruction::{GenericRegister, RegisterMapping};
 
 pub struct Program<A, R: Register> {
@@ -25,10 +26,10 @@ where
         self.ctx.add_variable(name, value)
     }
 
-    pub fn compile(&self, path: &Path) -> Result<(), CompileError> {
-        let compiler = Compiler::new(CompilerOptions::default());
-        compiler.compile_and_link(path)
-    }
+    // pub fn compile(&self, path: &Path) -> Result<(), CompileError> {
+    //     let compiler = Compiler::new(CompilerOptions::default());
+    //     compiler.compile_and_link(path)
+    // }
 }
 
 impl<A, R: Register> fmt::Display for Program<A, R> {

@@ -1,6 +1,7 @@
 // Shared test utilities
-use lib::*;
+use asm_test::*;
+use asm_test::arch::arm64::{ARM64, Arm64Register};
 
-pub fn setup_test_program() -> Program<ARM64, ARM64Register, MacOS> {
-    Program::new(ARM64::new(), MacOS)
+pub fn setup_test_program() -> Program<ARM64, Arm64Register> {
+    Program::new(ARM64::new())
 } 

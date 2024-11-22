@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "asm_test"
+name = "assembler"
 version = "0.1.0"

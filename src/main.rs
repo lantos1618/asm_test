@@ -1,109 +1,7 @@
 use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
+use assembler::*;
+use serde_json;
 
-/// Optional comment
-type Comment = Option<String>;
-
-/// Enums for assembly directives
-#[derive(Debug, Serialize, Deserialize)]
-enum Directive {
-    Global(String),
-    Extern(String),
-    Section(SectionType),
-}
-
-/// Enum for section types
-#[derive(Debug, Serialize, Deserialize)]
-enum SectionType {
-    Data,
-    Text,
-}
-
-/// Enum for registers
-#[derive(Debug, Serialize, Deserialize)]
-enum Register {
-    /// General-purpose register (e.g., x0-x30 for ARM64)
-    Gp(u8),
-    /// Floating-point register (e.g., f0-f31)
-    Fp(u8),
-    /// Special registers
-    Sp, // Stack Pointer
-    Pc, // Program Counter
-    Lr, // Link Register
-    // Add other special registers as needed
-}
-
-/// Enum for assembly operations
-#[derive(Debug, Serialize, Deserialize)]
-enum Op {
-    Adrp,
-    Add,
-    Bl,
-    Mov,
-    Call,
-    // ... other operations
-}
-
-/// Enum for operands in instructions
-#[derive(Debug, Serialize, Deserialize)]
-enum Operand {
-    Register(Register),
-    Immediate(i64),
-    Label(String),
-    MemoryAddress(String),
-    // ... other operand types
-}
-
-/// Struct for assembly instructions
-#[derive(Debug, Serialize, Deserialize)]
-struct Ins {
-    op: Op,
-    operands: Vec<Operand>,
-    comment: Comment,
-}
-
-/// Enum for label variants
-#[derive(Debug, Serialize, Deserialize)]
-enum LabelVariant {
-    Data(DataLabel),
-    Code(CodeLabel),
-}
-
-/// Struct for labels
-#[derive(Debug, Serialize, Deserialize)]
-struct Label {
-    val: LabelVariant,
-    comment: Comment,
-}
-
-/// Struct for code labels in code sections
-#[derive(Debug, Serialize, Deserialize)]
-struct CodeLabel {
-    name: String,
-    instructions: Vec<Ins>,
-}
-
-/// Struct for data labels in data sections
-#[derive(Debug, Serialize, Deserialize)]
-struct DataLabel {
-    name: String,
-    directive: String,
-    value: String,
-}
-
-/// Struct for sections in the program
-#[derive(Debug, Serialize, Deserialize)]
-struct Section {
-    section_type: SectionType,
-    labels: Vec<Label>,
-}
-
-/// Struct for the entire assembly program
-#[derive(Debug, Serialize, Deserialize)]
-struct Program {
-    directives: Vec<Directive>,
-    sections: Vec<Section>,
-}
 
 fn main() {
     // Instantiate the Program struct with your assembly code
@@ -177,7 +75,7 @@ fn main() {
     };
 
     // For demonstration, print the program structure
-    println!("{:#?}", program);
+    println!("{}", serde_json::to_string(&program).unwrap());
 }
 
 

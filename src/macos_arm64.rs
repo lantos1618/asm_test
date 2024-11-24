@@ -422,3 +422,11 @@ impl Display for MacOSIns {
 }
 
 
+impl Display for MacOSProgram {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for directive in &self.directives {
+            write!(f, "{}", directive)?;
+        }
+        Ok(())
+    }
+}

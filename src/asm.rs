@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 use serde_json;
 
 /// Optional comment
-type Comment = Option<String>;
+pub type Comment = Option<String>;
 
 /// Enums for assembly directives
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -68,7 +68,6 @@ pub enum Operand {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ins {
     pub op: Op,
-    pub operands: Vec<Operand>,
     pub comment: Comment,
 }
 

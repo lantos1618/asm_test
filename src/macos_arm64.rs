@@ -27,7 +27,7 @@ pub enum MacOSSectionType {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum MacOSRegister {
     /// General-purpose register (e.g., x0-x30 for ARM64)
-    X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11, X12, X13, X14, X15, X16, X17, X18, X19, X20, X21, X22, X23, X24, X25, X26, X27, X28, X29, X30, X31,
+    X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11, X12, X13, X14, X15, X16, X17, X18, X19, X20, X21, X22, X23, X24, X25, X26, X27, X28, X29, X30, X31,
     V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22, V23, V24, V25, V26, V27, V28, V29, V30, V31,
     W0, W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11, W12, W13, W14, W15, W16, W17, W18, W19, W20, W21, W22, W23, W24, W25, W26, W27, W28, W29, W30, W31,
     /// Special registers
@@ -141,6 +141,7 @@ impl From<Register> for MacOSRegister {
         match register {
             Register::Gp(x) => {
                 match x {
+                    0 => MacOSRegister::X0,
                     1 => MacOSRegister::X1,
                     2 => MacOSRegister::X2,
                     3 => MacOSRegister::X3,
@@ -251,6 +252,62 @@ impl From<Operand> for MacOSOperand {
     }
 }
 
+
+
+impl From<Program> for MacOSProgram {
+    fn from(program: Program) -> Self {
+        let directives = program.directives.into_iter().map(MacOSDirective::from).collect();
+        let sections = program.sections.into_iter().map(MacOSSection::from).collect();
+        MacOSProgram { directives, sections }
+    }
+}
+
+impl From<Section> for MacOSSection {
+    fn from(section: Section) -> Self {
+        let section_type = MacOSSectionType::from(section.section_type);
+        let labels = section.labels.into_iter().map(MacOSLabel::from).collect();
+        MacOSSection { section_type, labels }
+    }
+}
+
+impl From<Label> for MacOSLabel {
+    fn from(label: Label) -> Self {
+        let val = match label.val {
+            LabelVariant::Data(data_label) => MacOSLabelVariant::Data(MacOSDataLabel::from(data_label)),
+            LabelVariant::Code(code_label) => MacOSLabelVariant::Code(MacOSCodeLabel::from(code_label)),
+        };
+        let comment = label.comment;
+        MacOSLabel { val, comment }
+    }
+}
+
+impl From<DataLabel> for MacOSDataLabel {
+    fn from(data_label: DataLabel) -> Self {
+        MacOSDataLabel {
+            name: data_label.name,
+            directive: data_label.directive,
+            value: data_label.value,
+        }
+    }
+}
+
+impl From<CodeLabel> for MacOSCodeLabel {
+    fn from(code_label: CodeLabel) -> Self {
+        let name = code_label.name;
+        let instructions = code_label.instructions.into_iter().map(MacOSIns::from).collect();
+        MacOSCodeLabel { name, instructions }
+    }
+}
+
+impl From<Ins> for MacOSIns {
+    fn from(ins: Ins) -> Self {
+        let op = MacOSOp::from(ins.op);
+        let comment = ins.comment;
+        MacOSIns { op, comment }
+    }
+}
+
+
 impl Display for MacOSDirective {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -276,6 +333,7 @@ impl Display for MacOSSectionType {
 impl Display for MacOSRegister {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            MacOSRegister::X0 => write!(f, "x0"),
             MacOSRegister::X1 => write!(f, "x1"),
             MacOSRegister::X2 => write!(f, "x2"),
             MacOSRegister::X3 => write!(f, "x3"),
@@ -421,11 +479,54 @@ impl Display for MacOSIns {
     }
 }
 
+impl Display for MacOSDataLabel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}: .{} {}", self.name, self.directive, self.value)
+    }
+}
+
+impl Display for MacOSCodeLabel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:\n    {}", self.name, self.instructions.iter().map(|ins| format!("{}", ins)).collect::<Vec<_>>().join("\n    "))
+    }
+}
+
+impl Display for MacOSLabelVariant {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MacOSLabelVariant::Data(data_label) => write!(f, "{}", data_label),
+            MacOSLabelVariant::Code(code_label) => write!(f, "{}", code_label),
+        }
+    }
+}
+
+impl Display for MacOSLabel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.val)?;
+        if let Some(comment) = &self.comment {
+            write!(f, "\t// {}", comment)?;
+        }
+        Ok(())
+    }
+}
+
+impl Display for MacOSSection {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.section_type)?;
+        for label in &self.labels {
+            write!(f, "\n{}", label)?;
+        }
+        Ok(())
+    }
+}
 
 impl Display for MacOSProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for directive in &self.directives {
             write!(f, "{}", directive)?;
+        }
+        for section in &self.sections {
+            write!(f, "{}", section)?;
         }
         Ok(())
     }

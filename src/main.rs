@@ -78,6 +78,6 @@ _main:
 "#;
 
         // You need to implement a function to convert `program` to a string `actual`
-        // assert_eq!(expected, actual);
+        assert_eq!(expected, actual);
     }
 }

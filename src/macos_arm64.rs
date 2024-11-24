@@ -39,19 +39,18 @@ pub enum MacOSRegister {
 /// Enum for macOS ARM64 assembly operations
 #[derive(Debug, Serialize, Deserialize)]
 pub enum MacOSOp {
-    Adrp,
-    Add,
-    Bl,
-    Mov,
-    Call,
+    Adrp { rd: MacOSRegister, label: String },
+    Add { rd: MacOSRegister, rn: MacOSRegister, rm: MacOSRegister },
+    Bl { label: String },
+    Mov { rd: MacOSRegister, op: MacOSOperand },
+    Call { label: String },
     Ret,
-    Sub,  // Subtract
-    Mul,  // Multiply
-    Div,  // Divide
-    And,  // Bitwise AND
-    Or,   // Bitwise OR
-    Xor,  // Bitwise XOR
-    // Add more operations as needed
+    Sub { rd: MacOSRegister, rn: MacOSRegister, op: MacOSOperand },
+    Mul { rd: MacOSRegister, rn: MacOSRegister, rm: MacOSRegister },
+    Div { rd: MacOSRegister, rn: MacOSRegister, rm: MacOSRegister },
+    And { rd: MacOSRegister, rn: MacOSRegister, op: MacOSOperand },
+    Or { rd: MacOSRegister, rn: MacOSRegister, op: MacOSOperand },
+    Xor { rd: MacOSRegister, rn: MacOSRegister, op: MacOSOperand },
 }
 
 /// Enum for operands in macOS ARM64 instructions
@@ -70,7 +69,6 @@ pub enum MacOSOperand {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MacOSIns {
     pub op: MacOSOp,
-    pub operands: Vec<MacOSOperand>,
     pub comment: Comment,
 }
 
@@ -224,18 +222,18 @@ impl From<Register> for MacOSRegister {
 impl From<Op> for MacOSOp {
     fn from(op: Op) -> Self {
         match op {
-            Op::Adrp => MacOSOp::Adrp,
-            Op::Xor => MacOSOp::Xor,
-            Op::Add => MacOSOp::Add,
-            Op::Bl => MacOSOp::Bl,
-            Op::Mov => MacOSOp::Mov,
-            Op::Call => MacOSOp::Call,
+            Op::Adrp { rd, label } => MacOSOp::Adrp { rd: rd.into(), label },
+            Op::Add { rd, rn, rm } => MacOSOp::Add { rd: rd.into(), rn: rn.into(), rm: rm.into() },
+            Op::Bl { label } => MacOSOp::Bl { label },
+            Op::Mov { rd, op } => MacOSOp::Mov { rd: rd.into(), op: op.into() },
+            Op::Call { label } => MacOSOp::Call { label },
             Op::Ret => MacOSOp::Ret,
-            Op::Sub => MacOSOp::Sub,
-            Op::Mul => MacOSOp::Mul,
-            Op::Div => MacOSOp::Div,
-            Op::And => MacOSOp::And,
-            Op::Or => MacOSOp::Or,
+            Op::Sub { rd, rn, op } => MacOSOp::Sub { rd: rd.into(), rn: rn.into(), op: op.into() },
+            Op::Mul { rd, rn, rm } => MacOSOp::Mul { rd: rd.into(), rn: rn.into(), rm: rm.into() },
+            Op::Div { rd, rn, rm } => MacOSOp::Div { rd: rd.into(), rn: rn.into(), rm: rm.into() },
+            Op::And { rd, rn, op } => MacOSOp::And { rd: rd.into(), rn: rn.into(), op: op.into() },
+            Op::Or { rd, rn, op } => MacOSOp::Or { rd: rd.into(), rn: rn.into(), op: op.into() },
+            Op::Xor { rd, rn, op } => MacOSOp::Xor { rd: rd.into(), rn: rn.into(), op: op.into() },
         }
     }
 }
@@ -383,18 +381,18 @@ impl Display for MacOSRegister {
 impl Display for MacOSOp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            MacOSOp::Adrp => write!(f, "adrp"),
-            MacOSOp::Add => write!(f, "add"),
-            MacOSOp::Bl => write!(f, "bl"),
-            MacOSOp::Mov => write!(f, "mov"),
-            MacOSOp::Call => write!(f, "call"),
+            MacOSOp::Adrp { rd, label } => write!(f, "adrp {}, {}", rd, label),
+            MacOSOp::Add { rd, rn, rm } => write!(f, "add {}, {}, {}", rd, rn, rm),
+            MacOSOp::Bl { label } => write!(f, "bl {}", label),
+            MacOSOp::Mov { rd, op } => write!(f, "mov {}, {}", rd, op),
+            MacOSOp::Call { label } => write!(f, "call {}", label),
             MacOSOp::Ret => write!(f, "ret"),
-            MacOSOp::Sub => write!(f, "sub"),
-            MacOSOp::Mul => write!(f, "mul"),
-            MacOSOp::Div => write!(f, "div"),
-            MacOSOp::And => write!(f, "and"),
-            MacOSOp::Or => write!(f, "or"),
-            MacOSOp::Xor => write!(f, "xor"),
+            MacOSOp::Sub { rd, rn, op } => write!(f, "sub {}, {}, {}", rd, rn, op),
+            MacOSOp::Mul { rd, rn, rm } => write!(f, "mul {}, {}, {}", rd, rn, rm),
+            MacOSOp::Div { rd, rn, rm } => write!(f, "div {}, {}, {}", rd, rn, rm),
+            MacOSOp::And { rd, rn, op } => write!(f, "and {}, {}, {}", rd, rn, op),
+            MacOSOp::Or { rd, rn, op } => write!(f, "or {}, {}, {}", rd, rn, op),
+            MacOSOp::Xor { rd, rn, op } => write!(f, "xor {}, {}, {}", rd, rn, op),
         }
     }
 }
@@ -409,15 +407,13 @@ impl Display for MacOSOperand {
             MacOSOperand::MemoryOffset { base, offset } => write!(f, "[{}, #{}]", base, offset),
             MacOSOperand::ScaledIndex { base, index, scale } => write!(f, "[{}, {}, lsl #{}]", base, index, scale),
         }
+        
     }
 }
 
 impl Display for MacOSIns {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "\t{}", self.op)?;
-        for operand in &self.operands {
-            write!(f, " {}", operand)?;
-        }
         if let Some(comment) = &self.comment {
             write!(f, "\t// {}", comment)?;
         }

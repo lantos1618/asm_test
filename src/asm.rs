@@ -38,19 +38,18 @@ pub enum Register {
 /// Enum for assembly operations
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Op {
-    Adrp,
-    Add,
-    Bl,
-    Mov,
-    Call,
+    Adrp { rd: Register, label: String },
+    Add { rd: Register, rn: Register, rm: Register },
+    Bl { label: String },
+    Mov { rd: Register, op: Operand },
+    Call { label: String },
     Ret,
-    Sub,  // Subtract
-    Mul,  // Multiply
-    Div,  // Divide
-    And,  // Bitwise AND
-    Or,   // Bitwise OR
-    Xor,  // Bitwise XOR
-    // Add more operations as needed
+    Sub { rd: Register, rn: Register, op: Operand },
+    Mul { rd: Register, rn: Register, rm: Register },
+    Div { rd: Register, rn: Register, rm: Register },
+    And { rd: Register, rn: Register, op: Operand },
+    Or { rd: Register, rn: Register, op: Operand },
+    Xor { rd: Register, rn: Register, op: Operand },
 }
 
 /// Enum for operands in instructions

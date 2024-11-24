@@ -24,44 +24,74 @@ pub enum SectionType {
 /// Enum for registers
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Register {
-    /// General-purpose register (e.g., x0-x30 for ARM64)
-    Gp(u8),
-    /// Floating-point register (e.g., f0-f31)
-    Fp(u8),
-    /// Special registers
-    Sp, // Stack Pointer
-    Pc, // Program Counter
-    Lr, // Link Register
-
+    Gp(u8),      // General-purpose register (e.g., x0-x30 on ARM64 or r0-r15 on x86)
+    Fp(u8),      // Floating-point register
+    Sp,          // Stack pointer
+    Pc,          // Program counter
+    Lr,          // Link register (e.g., x30 on ARM64)
+    // Add architecture-specific registers as needed
 }
 
 /// Enum for assembly operations
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Op {
-    Adrp { rd: Register, label: String },
-    Add { rd: Register, rn: Register, rm: Register },
-    Bl { label: String },
-    Mov { rd: Register, op: Operand },
-    Call { label: String },
-    Ret,
+    // Data movement
+    Mov { rd: Register, src: Operand },          // Generalized move operation
+    Load { rd: Register, addr: Operand },       // Load from memory
+    Store { rs: Register, addr: Operand },      // Store to memory
+
+    // Arithmetic operations
+    Add { rd: Register, rn: Register, op: Operand },
     Sub { rd: Register, rn: Register, op: Operand },
-    Mul { rd: Register, rn: Register, rm: Register },
-    Div { rd: Register, rn: Register, rm: Register },
+    Mul { rd: Register, rn: Register, op: Operand },
+    Div { rd: Register, rn: Register, op: Operand },
+
+    // Logical operations
     And { rd: Register, rn: Register, op: Operand },
     Or { rd: Register, rn: Register, op: Operand },
     Xor { rd: Register, rn: Register, op: Operand },
+    Not { rd: Register, rn: Register },
+
+    // Bitwise operations
+    Shl { rd: Register, rn: Register, amount: u8 }, // Shift left
+    Shr { rd: Register, rn: Register, amount: u8 }, // Logical shift right
+    Sar { rd: Register, rn: Register, amount: u8 }, // Arithmetic shift right
+
+    // Address computation
+    Lea { rd: Register, addr: Operand },           // Load effective address
+    Adrp { rd: Register, label: Operand },         // ARM64-specific address of page
+
+    // Branching and control flow
+    Call { label: Operand },                        // Call a function
+    Ret,                                           // Return
+    Branch { label: Operand },                      // Unconditional branch
+    BranchIf { cond: Condition, label: Operand },   // Conditional branch
+
+    // SIMD/Vector operations
+    VecAdd { rd: Register, rn: Register, rm: Register }, // Vectorized addition
+    VecMul { rd: Register, rn: Register, rm: Register }, // Vectorized multiplication
+
+    // Atomic/Threading
+    AtomicLoad { rd: Register, addr: Operand },    // Atomic load
+    AtomicStore { rs: Register, addr: Operand },   // Atomic store
+    AtomicAdd { rd: Register, rn: Register, addr: Operand }, // Atomic addition
+
+    // System-specific
+    SysCall { num: u64 },       // System call with number
+    Nop,                        // No operation
+    Halt,                       // Halt the system
 }
 
 /// Enum for operands in instructions
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Operand {
-    Register(Register),
-    Immediate(i64),
-    Label(String),
-    MemoryAddress(String),
-    MemoryOffset { base: Register, offset: i64 },
-    ScaledIndex { base: Register, index: Register, scale: u8 },
-    // Add more operand types as needed
+    Register(Register),                    // A CPU register
+    Immediate(i64),                        // Immediate value
+    MemoryAddress(String),                 // Direct memory address (label or symbol)
+    MemoryOffset { base: Register, offset: i64 }, // Address with offset
+    ScaledIndex { base: Register, index: Register, scale: u8 }, // Base + index * scale
+    LabelWithModifier { label: String, modifier: LabelModifier }, // Label with modifiers like :lo12:, @PAGE
+    Label(String), // Label without modifiers
 }
 
 /// Struct for assembly instructions
@@ -112,4 +142,26 @@ pub struct Section {
 pub struct Program {
     pub directives: Vec<Directive>,
     pub sections: Vec<Section>,
+}
+
+/// Enum for label variants
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Condition {
+    Eq,  // Equal
+    Ne,  // Not equal
+    Lt,  // Less than
+    Gt,  // Greater than
+    Le,  // Less than or equal
+    Ge,  // Greater than or equal
+    // Add architecture-specific flags (e.g., Zero, Overflow)
+}
+
+/// Enum for label modifiers
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum LabelModifier {
+    Page,      // @PAGE
+    PageOff,   // @PAGEOFF
+    Lo12,      // :lo12:
+    Hi20,      // :hi20:
+    // Add other modifiers as needed
 }

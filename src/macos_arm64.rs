@@ -39,15 +39,15 @@ pub enum MacOSRegister {
 /// Enum for macOS ARM64 assembly operations
 #[derive(Debug, Serialize, Deserialize)]
 pub enum MacOSOp {
-    Adrp { rd: MacOSRegister, label: String },
-    Add { rd: MacOSRegister, rn: MacOSRegister, rm: MacOSRegister },
-    Bl { label: String },
-    Mov { rd: MacOSRegister, op: MacOSOperand },
-    Call { label: String },
+    Adrp { rd: MacOSRegister, label: MacOSOperand },
+    Add { rd: MacOSRegister, rn: MacOSRegister, op: MacOSOperand },
+    Bl { label: MacOSOperand },
+    Mov { rd: MacOSRegister, src: MacOSOperand },
+    Call { label: MacOSOperand },
     Ret,
     Sub { rd: MacOSRegister, rn: MacOSRegister, op: MacOSOperand },
-    Mul { rd: MacOSRegister, rn: MacOSRegister, rm: MacOSRegister },
-    Div { rd: MacOSRegister, rn: MacOSRegister, rm: MacOSRegister },
+    Mul { rd: MacOSRegister, rn: MacOSRegister, op: MacOSOperand },
+    Div { rd: MacOSRegister, rn: MacOSRegister, op: MacOSOperand },
     And { rd: MacOSRegister, rn: MacOSRegister, op: MacOSOperand },
     Or { rd: MacOSRegister, rn: MacOSRegister, op: MacOSOperand },
     Xor { rd: MacOSRegister, rn: MacOSRegister, op: MacOSOperand },
@@ -62,7 +62,12 @@ pub enum MacOSOperand {
     MemoryAddress(String),
     MemoryOffset { base: MacOSRegister, offset: i64 },
     ScaledIndex { base: MacOSRegister, index: MacOSRegister, scale: u8 },
-    // Add more operand types as needed
+    LabelWithModifier { label: String, modifier: MacOSLabelModifier },
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum MacOSLabelModifier {
+    Lsl(u8),
 }
 
 /// Struct for macOS ARM64 assembly instructions
@@ -223,18 +228,32 @@ impl From<Register> for MacOSRegister {
 impl From<Op> for MacOSOp {
     fn from(op: Op) -> Self {
         match op {
-            Op::Adrp { rd, label } => MacOSOp::Adrp { rd: rd.into(), label },
-            Op::Add { rd, rn, rm } => MacOSOp::Add { rd: rd.into(), rn: rn.into(), rm: rm.into() },
-            Op::Bl { label } => MacOSOp::Bl { label },
-            Op::Mov { rd, op } => MacOSOp::Mov { rd: rd.into(), op: op.into() },
-            Op::Call { label } => MacOSOp::Call { label },
+            Op::Adrp { rd, label } => MacOSOp::Adrp { rd: rd.into(), label: label.into() },
+            Op::Add { rd, rn, op } => MacOSOp::Add { rd: rd.into(), rn: rn.into(), op: op.into() },
+            Op::Branch { label } => MacOSOp::Bl { label: label.into() },
+            Op::Mov { rd, src } => MacOSOp::Mov { rd: rd.into(), src: src.into() },
+            Op::Call { label } => MacOSOp::Call { label: label.into() },
             Op::Ret => MacOSOp::Ret,
             Op::Sub { rd, rn, op } => MacOSOp::Sub { rd: rd.into(), rn: rn.into(), op: op.into() },
-            Op::Mul { rd, rn, rm } => MacOSOp::Mul { rd: rd.into(), rn: rn.into(), rm: rm.into() },
-            Op::Div { rd, rn, rm } => MacOSOp::Div { rd: rd.into(), rn: rn.into(), rm: rm.into() },
+            Op::Mul { rd, rn, op } => MacOSOp::Mul { rd: rd.into(), rn: rn.into(), op: op.into() },
+            Op::Div { rd, rn, op } => MacOSOp::Div { rd: rd.into(), rn: rn.into(), op: op.into() },
             Op::And { rd, rn, op } => MacOSOp::And { rd: rd.into(), rn: rn.into(), op: op.into() },
             Op::Or { rd, rn, op } => MacOSOp::Or { rd: rd.into(), rn: rn.into(), op: op.into() },
             Op::Xor { rd, rn, op } => MacOSOp::Xor { rd: rd.into(), rn: rn.into(), op: op.into() },
+            // Handle other `Op` variants as needed
+            _ => unimplemented!("Unsupported operation: {:?}", op),
+        }
+    }
+}
+
+impl From<LabelModifier> for MacOSLabelModifier {
+    fn from(modifier: LabelModifier) -> Self {
+        match modifier {
+            LabelModifier::Page => MacOSLabelModifier::Lsl(12),
+            LabelModifier::PageOff => MacOSLabelModifier::Lsl(12),
+            LabelModifier::Lo12 => MacOSLabelModifier::Lsl(12),
+            LabelModifier::Hi20 => MacOSLabelModifier::Lsl(12),
+            _ => unimplemented!("Unsupported label modifier: {:?}", modifier),
         }
     }
 }
@@ -244,10 +263,11 @@ impl From<Operand> for MacOSOperand {
         match operand {
             Operand::Register(reg) => MacOSOperand::Register(reg.into()),
             Operand::Immediate(val) => MacOSOperand::Immediate(val),
-            Operand::Label(label) => MacOSOperand::Label(label),
             Operand::MemoryAddress(address) => MacOSOperand::MemoryAddress(address),
             Operand::MemoryOffset { base, offset } => MacOSOperand::MemoryOffset { base: base.into(), offset },
             Operand::ScaledIndex { base, index, scale } => MacOSOperand::ScaledIndex { base: base.into(), index: index.into(), scale },
+            Operand::LabelWithModifier { label, modifier } => MacOSOperand::LabelWithModifier { label, modifier: modifier.into() },
+            Operand::Label(label) => MacOSOperand::Label(label),
         }
     }
 }
@@ -322,10 +342,10 @@ impl Display for MacOSDirective {
 impl Display for MacOSSectionType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            MacOSSectionType::Data => write!(f, ".data"),
-            MacOSSectionType::Text => write!(f, ".text"),
-            MacOSSectionType::Const => write!(f, ".const"),
-            MacOSSectionType::Bss => write!(f, ".bss"),
+            MacOSSectionType::Data => write!(f, ".section __DATA,__cstring"),
+            MacOSSectionType::Text => write!(f, ".section __TEXT,__text"),
+            MacOSSectionType::Const => write!(f, ".section __DATA,__const"),
+            MacOSSectionType::Bss => write!(f, ".section __DATA,__bss"),
         }
     }
 }
@@ -440,14 +460,14 @@ impl Display for MacOSOp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             MacOSOp::Adrp { rd, label } => write!(f, "adrp {}, {}", rd, label),
-            MacOSOp::Add { rd, rn, rm } => write!(f, "add {}, {}, {}", rd, rn, rm),
+            MacOSOp::Add { rd, rn, op } => write!(f, "add {}, {}, {}", rd, rn, op),
             MacOSOp::Bl { label } => write!(f, "bl {}", label),
-            MacOSOp::Mov { rd, op } => write!(f, "mov {}, {}", rd, op),
+            MacOSOp::Mov { rd, src } => write!(f, "mov {}, {}", rd, src),
             MacOSOp::Call { label } => write!(f, "call {}", label),
             MacOSOp::Ret => write!(f, "ret"),
             MacOSOp::Sub { rd, rn, op } => write!(f, "sub {}, {}, {}", rd, rn, op),
-            MacOSOp::Mul { rd, rn, rm } => write!(f, "mul {}, {}, {}", rd, rn, rm),
-            MacOSOp::Div { rd, rn, rm } => write!(f, "div {}, {}, {}", rd, rn, rm),
+            MacOSOp::Mul { rd, rn, op } => write!(f, "mul {}, {}, {}", rd, rn, op),
+            MacOSOp::Div { rd, rn, op } => write!(f, "div {}, {}, {}", rd, rn, op),
             MacOSOp::And { rd, rn, op } => write!(f, "and {}, {}, {}", rd, rn, op),
             MacOSOp::Or { rd, rn, op } => write!(f, "or {}, {}, {}", rd, rn, op),
             MacOSOp::Xor { rd, rn, op } => write!(f, "xor {}, {}, {}", rd, rn, op),
@@ -464,16 +484,26 @@ impl Display for MacOSOperand {
             MacOSOperand::MemoryAddress(address) => write!(f, "[{}]", address),
             MacOSOperand::MemoryOffset { base, offset } => write!(f, "[{}, #{}]", base, offset),
             MacOSOperand::ScaledIndex { base, index, scale } => write!(f, "[{}, {}, lsl #{}]", base, index, scale),
+            MacOSOperand::LabelWithModifier { label, modifier } => write!(f, "{} {}", label, modifier),
         }
         
     }
 }
 
+
+impl Display for MacOSLabelModifier {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MacOSLabelModifier::Lsl(amount) => write!(f, "l{}", amount),
+        }
+    }
+}
+
 impl Display for MacOSIns {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "\t{}", self.op)?;
+        write!(f, "{}", self.op)?;
         if let Some(comment) = &self.comment {
-            write!(f, "\t// {}", comment)?;
+            write!(f, " // {}", comment)?;
         }
         Ok(())
     }
@@ -481,7 +511,7 @@ impl Display for MacOSIns {
 
 impl Display for MacOSDataLabel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}: .{} {}", self.name, self.directive, self.value)
+        write!(f, "{}: .{} \"{}\"", self.name, self.directive, self.value.replace("\n", "\\n"))
     }
 }
 
@@ -504,7 +534,7 @@ impl Display for MacOSLabel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.val)?;
         if let Some(comment) = &self.comment {
-            write!(f, "\t// {}", comment)?;
+            write!(f, "    // {}", comment)?;
         }
         Ok(())
     }
@@ -512,9 +542,9 @@ impl Display for MacOSLabel {
 
 impl Display for MacOSSection {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.section_type)?;
+        write!(f, "{}\n", self.section_type)?;
         for label in &self.labels {
-            write!(f, "\n{}", label)?;
+            write!(f, "{}\n", label)?;
         }
         Ok(())
     }
@@ -523,7 +553,7 @@ impl Display for MacOSSection {
 impl Display for MacOSProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for directive in &self.directives {
-            write!(f, "{}", directive)?;
+            writeln!(f, "{}", directive)?;
         }
         for section in &self.sections {
             write!(f, "{}", section)?;

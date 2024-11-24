@@ -264,4 +264,165 @@ impl Display for MacOSDirective {
     }
 }
 
-// Implement Display for other types similarly...
+impl Display for MacOSSectionType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MacOSSectionType::Data => write!(f, ".data"),
+            MacOSSectionType::Text => write!(f, ".text"),
+            MacOSSectionType::Const => write!(f, ".const"),
+            MacOSSectionType::Bss => write!(f, ".bss"),
+        }
+    }
+}
+
+impl Display for MacOSRegister {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MacOSRegister::X1 => write!(f, "x1"),
+            MacOSRegister::X2 => write!(f, "x2"),
+            MacOSRegister::X3 => write!(f, "x3"),
+            MacOSRegister::X4 => write!(f, "x4"),
+            MacOSRegister::X5 => write!(f, "x5"),
+            MacOSRegister::X6 => write!(f, "x6"),
+            MacOSRegister::X7 => write!(f, "x7"),
+            MacOSRegister::X8 => write!(f, "x8"),
+            MacOSRegister::X9 => write!(f, "x9"),
+            MacOSRegister::X10 => write!(f, "x10"),
+            MacOSRegister::X11 => write!(f, "x11"),
+            MacOSRegister::X12 => write!(f, "x12"),
+            MacOSRegister::X13 => write!(f, "x13"),
+            MacOSRegister::X14 => write!(f, "x14"),
+            MacOSRegister::X15 => write!(f, "x15"),
+            MacOSRegister::X16 => write!(f, "x16"),
+            MacOSRegister::X17 => write!(f, "x17"),
+            MacOSRegister::X18 => write!(f, "x18"),
+            MacOSRegister::X19 => write!(f, "x19"),
+            MacOSRegister::X20 => write!(f, "x20"),
+            MacOSRegister::X21 => write!(f, "x21"),
+            MacOSRegister::X22 => write!(f, "x22"),
+            MacOSRegister::X23 => write!(f, "x23"),
+            MacOSRegister::X24 => write!(f, "x24"),
+            MacOSRegister::X25 => write!(f, "x25"),
+            MacOSRegister::X26 => write!(f, "x26"),
+            MacOSRegister::X27 => write!(f, "x27"),
+            MacOSRegister::X28 => write!(f, "x28"),
+            MacOSRegister::X29 => write!(f, "x29"),
+            MacOSRegister::X30 => write!(f, "x30"),
+            MacOSRegister::X31 => write!(f, "x31"),
+            MacOSRegister::V0 => write!(f, "v0"),
+            MacOSRegister::V1 => write!(f, "v1"),
+            MacOSRegister::V2 => write!(f, "v2"),
+            MacOSRegister::V3 => write!(f, "v3"),
+            MacOSRegister::V4 => write!(f, "v4"),
+            MacOSRegister::V5 => write!(f, "v5"),
+            MacOSRegister::V6 => write!(f, "v6"),
+            MacOSRegister::V7 => write!(f, "v7"),
+            MacOSRegister::V8 => write!(f, "v8"),
+            MacOSRegister::V9 => write!(f, "v9"),
+            MacOSRegister::V10 => write!(f, "v10"),
+            MacOSRegister::V11 => write!(f, "v11"),
+            MacOSRegister::V12 => write!(f, "v12"),
+            MacOSRegister::V13 => write!(f, "v13"),
+            MacOSRegister::V14 => write!(f, "v14"),
+            MacOSRegister::V15 => write!(f, "v15"),
+            MacOSRegister::V16 => write!(f, "v16"),
+            MacOSRegister::V17 => write!(f, "v17"),
+            MacOSRegister::V18 => write!(f, "v18"),
+            MacOSRegister::V19 => write!(f, "v19"),
+            MacOSRegister::V20 => write!(f, "v20"),
+            MacOSRegister::V21 => write!(f, "v21"),
+            MacOSRegister::V22 => write!(f, "v22"),
+            MacOSRegister::V23 => write!(f, "v23"),
+            MacOSRegister::V24 => write!(f, "v24"),
+            MacOSRegister::V25 => write!(f, "v25"),
+            MacOSRegister::V26 => write!(f, "v26"),
+            MacOSRegister::V27 => write!(f, "v27"),
+            MacOSRegister::V28 => write!(f, "v28"),
+            MacOSRegister::V29 => write!(f, "v29"),
+            MacOSRegister::V30 => write!(f, "v30"),
+            MacOSRegister::V31 => write!(f, "v31"),
+            MacOSRegister::W0 => write!(f, "w0"),
+            MacOSRegister::W1 => write!(f, "w1"),
+            MacOSRegister::W2 => write!(f, "w2"),
+            MacOSRegister::W3 => write!(f, "w3"),
+            MacOSRegister::W4 => write!(f, "w4"),
+            MacOSRegister::W5 => write!(f, "w5"),
+            MacOSRegister::W6 => write!(f, "w6"),
+            MacOSRegister::W7 => write!(f, "w7"),
+            MacOSRegister::W8 => write!(f, "w8"),
+            MacOSRegister::W9 => write!(f, "w9"),
+            MacOSRegister::W10 => write!(f, "w10"),
+            MacOSRegister::W11 => write!(f, "w11"),
+            MacOSRegister::W12 => write!(f, "w12"),
+            MacOSRegister::W13 => write!(f, "w13"),
+            MacOSRegister::W14 => write!(f, "w14"),
+            MacOSRegister::W15 => write!(f, "w15"),
+            MacOSRegister::W16 => write!(f, "w16"),
+            MacOSRegister::W17 => write!(f, "w17"),
+            MacOSRegister::W18 => write!(f, "w18"),
+            MacOSRegister::W19 => write!(f, "w19"),
+            MacOSRegister::W20 => write!(f, "w20"),
+            MacOSRegister::W21 => write!(f, "w21"),
+            MacOSRegister::W22 => write!(f, "w22"),
+            MacOSRegister::W23 => write!(f, "w23"),
+            MacOSRegister::W24 => write!(f, "w24"),
+            MacOSRegister::W25 => write!(f, "w25"),
+            MacOSRegister::W26 => write!(f, "w26"),
+            MacOSRegister::W27 => write!(f, "w27"),
+            MacOSRegister::W28 => write!(f, "w28"),
+            MacOSRegister::W29 => write!(f, "w29"),
+            MacOSRegister::W30 => write!(f, "w30"),
+            MacOSRegister::W31 => write!(f, "w31"),
+            MacOSRegister::Sp => write!(f, "sp"),
+            MacOSRegister::Pc => write!(f, "pc"),
+            MacOSRegister::Lr => write!(f, "lr"),
+        }
+    }
+}
+
+impl Display for MacOSOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MacOSOp::Adrp => write!(f, "adrp"),
+            MacOSOp::Add => write!(f, "add"),
+            MacOSOp::Bl => write!(f, "bl"),
+            MacOSOp::Mov => write!(f, "mov"),
+            MacOSOp::Call => write!(f, "call"),
+            MacOSOp::Ret => write!(f, "ret"),
+            MacOSOp::Sub => write!(f, "sub"),
+            MacOSOp::Mul => write!(f, "mul"),
+            MacOSOp::Div => write!(f, "div"),
+            MacOSOp::And => write!(f, "and"),
+            MacOSOp::Or => write!(f, "or"),
+            MacOSOp::Xor => write!(f, "xor"),
+        }
+    }
+}
+
+impl Display for MacOSOperand {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MacOSOperand::Register(reg) => write!(f, "{}", reg),
+            MacOSOperand::Immediate(val) => write!(f, "#{}", val),
+            MacOSOperand::Label(label) => write!(f, "{}", label),
+            MacOSOperand::MemoryAddress(address) => write!(f, "[{}]", address),
+            MacOSOperand::MemoryOffset { base, offset } => write!(f, "[{}, #{}]", base, offset),
+            MacOSOperand::ScaledIndex { base, index, scale } => write!(f, "[{}, {}, lsl #{}]", base, index, scale),
+        }
+    }
+}
+
+impl Display for MacOSIns {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "\t{}", self.op)?;
+        for operand in &self.operands {
+            write!(f, " {}", operand)?;
+        }
+        if let Some(comment) = &self.comment {
+            write!(f, "\t// {}", comment)?;
+        }
+        Ok(())
+    }
+}
+
+
